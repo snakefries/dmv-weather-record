@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f7f2e8">
+    <title>Capital Weather Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+    <script src="js/nws-api.js" defer></script>
+    <script src="js/charts.js" defer></script>
+    <script src="js/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Washington / Baltimore</p>
+        <h1>Weather Record</h1>
+      </div>
+      <p class="updated" id="last-updated">Loading live data...</p>
+    </header>
+
+    <main class="dashboard" aria-live="polite">
+      <section class="station-grid" aria-label="Current airport observations">
+        <article class="station-card" data-station-card="DCA">
+          <div>
+            <p class="station-code">DCA</p>
+            <h2>National</h2>
+          </div>
+          <dl class="conditions-list">
+            <div><dt>Temp</dt><dd data-current-temp>--</dd></div>
+            <div><dt>Wind</dt><dd data-current-wind>--</dd></div>
+            <div><dt>Observed</dt><dd data-current-time>--</dd></div>
+          </dl>
+        </article>
+
+        <article class="station-card" data-station-card="IAD">
+          <div>
+            <p class="station-code">IAD</p>
+            <h2>Dulles</h2>
+          </div>
+          <dl class="conditions-list">
+            <div><dt>Temp</dt><dd data-current-temp>--</dd></div>
+            <div><dt>Wind</dt><dd data-current-wind>--</dd></div>
+            <div><dt>Observed</dt><dd data-current-time>--</dd></div>
+          </dl>
+        </article>
+
+        <article class="station-card" data-station-card="BWI">
+          <div>
+            <p class="station-code">BWI</p>
+            <h2>BWI</h2>
+          </div>
+          <dl class="conditions-list">
+            <div><dt>Temp</dt><dd data-current-temp>--</dd></div>
+            <div><dt>Wind</dt><dd data-current-wind>--</dd></div>
+            <div><dt>Observed</dt><dd data-current-time>--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="summary-strip" aria-label="Today and tomorrow summary">
+        <article>
+          <p class="eyebrow">Today</p>
+          <p id="today-summary">Forecast loading...</p>
+        </article>
+        <article>
+          <p class="eyebrow">Tomorrow</p>
+          <p id="tomorrow-summary">Forecast loading...</p>
+        </article>
+      </section>
+
+      <section class="panel chart-panel" aria-labelledby="temperature-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">7-day outlook</p>
+            <h2 id="temperature-title">Temperatures</h2>
+          </div>
+          <div class="legend-note">
+            <span class="swatch swatch-low"></span> Low
+            <span class="swatch swatch-high"></span> High
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="temperature-chart" aria-label="Forecast high and low temperatures for DCA, IAD, and BWI" role="img"></canvas>
+        </div>
+        <p class="fine-print">
+          Forecast highs and lows use NWS point forecasts near each airport.
+          <!-- TODO: Add recent observed daily highs/lows from NOAA climate products when a reliable public endpoint is selected. -->
+          <!-- TODO: Overlay 30-year normals and record highs/lows for DCA, IAD, and BWI. -->
+        </p>
+      </section>
+
+      <section class="panel placeholder-panel" aria-labelledby="precipitation-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Coming next</p>
+            <h2 id="precipitation-title">Precipitation</h2>
+          </div>
+        </div>
+        <div class="placeholder-bars" aria-hidden="true">
+          <span style="height: 68%"></span>
+          <span style="height: 42%"></span>
+          <span style="height: 55%"></span>
+          <span style="height: 25%"></span>
+          <span style="height: 74%"></span>
+          <span style="height: 39%"></span>
+          <span style="height: 51%"></span>
+          <span style="height: 31%"></span>
+        </div>
+        <p class="fine-print">
+          Recent totals, month-to-date values, and normal comparisons will land here.
+          <!-- TODO: Fetch recent precipitation totals and add monthly or year-to-date normal/anomaly comparisons. -->
+        </p>
+      </section>
+
+      <section class="panel placeholder-panel" aria-labelledby="climate-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Climate context</p>
+            <h2 id="climate-title">Normals and Records</h2>
+          </div>
+        </div>
+        <div class="record-table" role="table" aria-label="Climate placeholders">
+          <div role="row"><span role="columnheader">Station</span><span role="columnheader">Normal</span><span role="columnheader">Record</span></div>
+          <div role="row"><span role="cell">DCA</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
+          <div role="row"><span role="cell">IAD</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
+          <div role="row"><span role="cell">BWI</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
+        </div>
+      </section>
+
+      <p class="error-message" id="error-message" hidden></p>
+    </main>
+  </body>
+</html>
