@@ -4,6 +4,7 @@
   const config = window.WeatherConfig;
 
   let temperatureChart;
+  let precipitationChart;
 
   function renderTemperatureChart(
     canvas,
@@ -254,7 +255,110 @@
       : config.temperatureScaleMax;
   }
 
+  function renderPrecipitationChart(canvas, precipitation) {
+    const station = config.stations.find((item) => item.id === precipitation.stationId);
+    const labels = precipitation.current.map((month) => month.label);
+    const previousTotals = precipitation.previous.map((month) => month.total);
+    const latestTotals = precipitation.current.map((month) => month.total);
+    const normalTotals = precipitation.current.map((month) => month.normal);
+
+    if (precipitationChart) {
+      precipitationChart.destroy();
+    }
+
+    precipitationChart = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: `${precipitation.previousYear}`,
+            data: previousTotals,
+            backgroundColor: "#a8d9e8",
+            borderSkipped: false,
+            categoryPercentage: 0.72,
+            barPercentage: 0.9,
+          },
+          {
+            label: "Historical average",
+            data: normalTotals,
+            backgroundColor: config.normalRangeColor,
+            borderSkipped: false,
+            categoryPercentage: 0.72,
+            barPercentage: 0.9,
+          },
+          {
+            label: `${precipitation.currentYear}`,
+            data: latestTotals,
+            backgroundColor: station ? station.chartColor : config.stations[0].chartColor,
+            borderSkipped: false,
+            categoryPercentage: 0.72,
+            barPercentage: 0.9,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: "index",
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${formatInches(context.parsed.y)}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: "#1f1f1f",
+              maxRotation: 0,
+              font: {
+                family: "Arial, Helvetica, sans-serif",
+                size: 12,
+                weight: "700",
+              },
+            },
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: getPrecipScaleMax([...previousTotals, ...latestTotals, ...normalTotals]),
+            ticks: {
+              color: "#1f1f1f",
+              callback: (value) => `${value}"`,
+              font: {
+                family: "Arial, Helvetica, sans-serif",
+                size: 12,
+              },
+            },
+            grid: {
+              color: "#5e5b55",
+              lineWidth: 1,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  function getPrecipScaleMax(values) {
+    const max = Math.max(...values.filter((value) => typeof value === "number"), 1);
+    return Math.ceil(max + 1);
+  }
+
+  function formatInches(value) {
+    if (typeof value !== "number") return "--";
+    return `${value.toFixed(2)}"`;
+  }
+
   window.WeatherCharts = {
     renderTemperatureChart,
+    renderPrecipitationChart,
   };
 })();

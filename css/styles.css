@@ -305,6 +305,15 @@ dd {
   background: #cfcfcf;
 }
 
+.key-block {
+  width: 14px;
+  height: 14px;
+}
+
+.key-previous {
+  background: #a8d9e8;
+}
+
 .key-dot {
   width: 9px;
   height: 9px;
@@ -326,6 +335,13 @@ dd {
   padding: 10px 0 8px;
 }
 
+.precip-chart-wrap {
+  height: clamp(260px, 42vh, 380px);
+  border-top: 2px solid var(--rule);
+  border-bottom: 2px solid var(--rule);
+  padding: 10px 0 4px;
+}
+
 .fine-print {
   color: var(--muted);
   margin-top: 10px;
@@ -334,59 +350,58 @@ dd {
   line-height: 1.35;
 }
 
-.placeholder-bars {
+.official-record {
+  margin-top: 16px;
+}
+
+.record-note {
+  font-size: clamp(1rem, 3.8vw, 1.25rem);
+  line-height: 1.2;
+}
+
+.official-table {
   display: grid;
-  align-items: end;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-  height: 150px;
-  border-block: 2px solid var(--rule);
-  background:
-    repeating-linear-gradient(
-      to top,
-      transparent 0,
-      transparent 29px,
-      rgba(44, 43, 40, 0.45) 30px
-    );
-  padding: 10px 8px 0;
+  margin-top: 8px;
+  font-size: clamp(0.98rem, 3.6vw, 1.2rem);
 }
 
-.placeholder-bars span {
-  display: block;
-  background: var(--blue);
-}
-
-.placeholder-bars span:nth-child(3n + 1) {
-  background: #a8d9e8;
-}
-
-.placeholder-bars span:nth-child(3n + 2) {
-  background: #b8b8b8;
-}
-
-.record-table {
+.official-table div {
   display: grid;
-  border-top: 1px solid var(--soft-rule);
-  font-size: clamp(0.96rem, 3.5vw, 1.2rem);
+  grid-template-columns: minmax(116px, 1.2fr) repeat(3, minmax(0, 1fr));
+  align-items: center;
 }
 
-.record-table div {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+.official-table div:first-child {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1rem, 4.2vw, 1.35rem);
+  font-weight: 900;
 }
 
-.record-table div:nth-child(even) {
+.official-table div:nth-child(even) {
   background: var(--band);
 }
 
-.record-table span {
-  padding: 8px;
+.official-table span {
+  min-width: 0;
+  padding: 7px 6px;
   text-align: center;
 }
 
-.record-table span:first-child {
-  font-weight: 800;
+.official-table span:first-child {
+  text-align: right;
+}
+
+.official-table div:first-child span:first-child {
   text-align: left;
+}
+
+.official-table [role="cell"] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.official-table [role="rowheader"] {
+  font-weight: 500;
 }
 
 .error-message {
@@ -445,6 +460,18 @@ dd {
 
   .legend-note {
     flex-wrap: wrap;
+  }
+
+  .official-table {
+    font-size: clamp(0.8rem, 3.3vw, 1rem);
+  }
+
+  .official-table div {
+    grid-template-columns: minmax(92px, 1.1fr) repeat(3, minmax(0, 1fr));
+  }
+
+  .official-table span {
+    padding: 7px 4px;
   }
 }
 

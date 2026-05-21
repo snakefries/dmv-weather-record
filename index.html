@@ -101,44 +101,108 @@
           Actual ranges use recent NWS station observations; forecast ranges use NWS point forecasts near <span id="temperature-station-label">National</span>. Historical averages and records use ACIS daily climate data.
           <!-- TODO: Validate observed daily highs/lows against official daily climate products when a reliable public endpoint is selected. -->
         </p>
+        <div class="official-record" aria-labelledby="official-record-title">
+          <p class="record-note" id="official-record-title">Statistics through latest complete day</p>
+          <div class="official-table" role="table" aria-label="Official temperature record">
+            <div role="row">
+              <span role="columnheader"></span>
+              <span role="columnheader">National</span>
+              <span role="columnheader">Dulles</span>
+              <span role="columnheader">BWI</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">High</span>
+              <span role="cell" data-record-cell="DCA.high">--</span>
+              <span role="cell" data-record-cell="IAD.high">--</span>
+              <span role="cell" data-record-cell="BWI.high">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Low</span>
+              <span role="cell" data-record-cell="DCA.low">--</span>
+              <span role="cell" data-record-cell="IAD.low">--</span>
+              <span role="cell" data-record-cell="BWI.low">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Historical Average</span>
+              <span role="cell" data-record-cell="DCA.normal">--</span>
+              <span role="cell" data-record-cell="IAD.normal">--</span>
+              <span role="cell" data-record-cell="BWI.normal">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Record high</span>
+              <span role="cell" data-record-cell="DCA.recordHigh">--</span>
+              <span role="cell" data-record-cell="IAD.recordHigh">--</span>
+              <span role="cell" data-record-cell="BWI.recordHigh">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Record low</span>
+              <span role="cell" data-record-cell="DCA.recordLow">--</span>
+              <span role="cell" data-record-cell="IAD.recordLow">--</span>
+              <span role="cell" data-record-cell="BWI.recordLow">--</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="panel placeholder-panel" aria-labelledby="precipitation-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Coming next</p>
+            <p class="eyebrow">Month by month</p>
             <h2 id="precipitation-title">Precipitation</h2>
           </div>
         </div>
-        <div class="placeholder-bars" aria-hidden="true">
-          <span style="height: 68%"></span>
-          <span style="height: 42%"></span>
-          <span style="height: 55%"></span>
-          <span style="height: 25%"></span>
-          <span style="height: 74%"></span>
-          <span style="height: 39%"></span>
-          <span style="height: 51%"></span>
-          <span style="height: 31%"></span>
+        <div class="chart-key" aria-label="Precipitation chart legend">
+          <span><i class="key-block key-previous"></i> Previous year</span>
+          <span><i class="key-block key-band"></i> Historical average</span>
+          <span><i class="key-block key-forecast"></i> Latest</span>
         </div>
-        <p class="fine-print">
-          Recent totals, month-to-date values, and normal comparisons will land here.
-          <!-- TODO: Fetch recent precipitation totals and add monthly or year-to-date normal/anomaly comparisons. -->
-        </p>
-      </section>
-
-      <section class="panel placeholder-panel" aria-labelledby="climate-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Climate context</p>
-            <h2 id="climate-title">Normals and Records</h2>
+        <div class="precip-chart-wrap">
+          <canvas id="precipitation-chart" aria-label="Monthly precipitation totals" role="img"></canvas>
+        </div>
+        <div class="official-record precip-record" aria-labelledby="precip-record-title">
+          <div class="official-table" role="table" aria-label="Precipitation record">
+            <div role="row" id="precip-record-title">
+              <span role="columnheader"></span>
+              <span role="columnheader">National</span>
+              <span role="columnheader">Dulles</span>
+              <span role="columnheader">BWI</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Latest day</span>
+              <span role="cell" data-precip-cell="DCA.latestDay">--</span>
+              <span role="cell" data-precip-cell="IAD.latestDay">--</span>
+              <span role="cell" data-precip-cell="BWI.latestDay">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Total this month</span>
+              <span role="cell" data-precip-cell="DCA.monthTotal">--</span>
+              <span role="cell" data-precip-cell="IAD.monthTotal">--</span>
+              <span role="cell" data-precip-cell="BWI.monthTotal">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Historical Average (month)</span>
+              <span role="cell" data-precip-cell="DCA.monthNormal">--</span>
+              <span role="cell" data-precip-cell="IAD.monthNormal">--</span>
+              <span role="cell" data-precip-cell="BWI.monthNormal">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Total this year</span>
+              <span role="cell" data-precip-cell="DCA.yearTotal">--</span>
+              <span role="cell" data-precip-cell="IAD.yearTotal">--</span>
+              <span role="cell" data-precip-cell="BWI.yearTotal">--</span>
+            </div>
+            <div role="row">
+              <span role="rowheader">Historical Average (year)</span>
+              <span role="cell" data-precip-cell="DCA.yearNormal">--</span>
+              <span role="cell" data-precip-cell="IAD.yearNormal">--</span>
+              <span role="cell" data-precip-cell="BWI.yearNormal">--</span>
+            </div>
           </div>
         </div>
-        <div class="record-table" role="table" aria-label="Climate placeholders">
-          <div role="row"><span role="columnheader">Station</span><span role="columnheader">Normal</span><span role="columnheader">Record</span></div>
-          <div role="row"><span role="cell">DCA</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
-          <div role="row"><span role="cell">IAD</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
-          <div role="row"><span role="cell">BWI</span><span role="cell">TODO</span><span role="cell">TODO</span></div>
-        </div>
+        <p class="fine-print">
+          Monthly precipitation totals and historical averages use ACIS daily and monthly climate data.
+          <!-- TODO: Replace latest-day row with true rolling 24-hour precipitation when a reliable endpoint is selected. -->
+        </p>
       </section>
 
       <p class="error-message" id="error-message" hidden></p>

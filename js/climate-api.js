@@ -51,6 +51,46 @@
     };
   }
 
+  async function getMonthlyPrecipitation(station) {
+    const currentYear = Number(relativeLocalDateKey(0).slice(0, 4));
+    const [current, previous] = await Promise.all([
+      getMonthlyPrecipitationSeries(station, currentYear, true),
+      getMonthlyPrecipitationSeries(station, currentYear - 1, false),
+    ]);
+
+    return {
+      stationId: station.id,
+      stationLabel: station.label,
+      currentYear,
+      previousYear: currentYear - 1,
+      current,
+      previous,
+    };
+  }
+
+  async function getMonthlyPrecipitationSeries(station, year, includeNormals) {
+    const body = {
+      sid: station.climateStation || station.nwsStation,
+      sdate: `${year}-01`,
+      edate: `${year}-12`,
+      elems: includeNormals
+        ? [
+            { name: "pcpn", interval: "mly", duration: "mly" },
+            { name: "pcpn", interval: "mly", duration: "mly", normal: 1 },
+          ]
+        : [{ name: "pcpn", interval: "mly", duration: "mly" }],
+    };
+    const data = await postJson(`${config.acisApiRoot}/StnData`, body);
+
+    return (data.data || []).map((row) => ({
+      month: row[0],
+      label: shortMonthLabel(row[0]),
+      total: sumDailyPrecip(row[1]),
+      normal: includeNormals ? parseClimateNumber(row[2]) : null,
+      latestDaily: latestDailyPrecip(row[1]),
+    }));
+  }
+
   async function getRecordSeries(station, elementName, reduce) {
     const body = {
       sid: station.climateStation || station.nwsStation,
@@ -100,6 +140,40 @@
     return Number.isFinite(number) ? number : null;
   }
 
+  function parsePrecipNumber(value) {
+    if (value === "T") return 0;
+    return parseClimateNumber(value);
+  }
+
+  function sumDailyPrecip(values) {
+    if (!Array.isArray(values)) return null;
+
+    const parsed = values.map(parsePrecipNumber).filter((value) => typeof value === "number");
+    if (!parsed.length) return null;
+
+    return roundPrecip(parsed.reduce((sum, value) => sum + value, 0));
+  }
+
+  function latestDailyPrecip(values) {
+    if (!Array.isArray(values)) return null;
+
+    for (let index = values.length - 1; index >= 0; index -= 1) {
+      const value = parsePrecipNumber(values[index]);
+      if (typeof value === "number") return roundPrecip(value);
+    }
+
+    return null;
+  }
+
+  function roundPrecip(value) {
+    return Math.round(value * 100) / 100;
+  }
+
+  function shortMonthLabel(monthKey) {
+    const date = new Date(`${monthKey}-01T12:00:00`);
+    return new Intl.DateTimeFormat("en-US", { month: "short" }).format(date);
+  }
+
   function relativeLocalDateKey(offsetDays) {
     const date = new Date();
     date.setDate(date.getDate() + offsetDays);
@@ -146,5 +220,6 @@
   window.ClimateApi = {
     getDailyTemperatureNormals,
     getDailyTemperatureRecords,
+    getMonthlyPrecipitation,
   };
 })();

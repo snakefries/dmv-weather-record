@@ -15,6 +15,7 @@
     recentDailyObservations: [],
     climateNormals: [],
     temperatureRecords: [],
+    monthlyPrecipitation: [],
     selectedStationId: DEFAULT_STATION_ID,
   };
 
@@ -27,20 +28,30 @@
       setLoadingState(true);
       bindTemperatureStationButtons();
 
-      const [observationResults, forecastResults, climateNormalResults, recordResults] = await Promise.all([
+      const [
+        observationResults,
+        forecastResults,
+        climateNormalResults,
+        recordResults,
+        precipitationResults,
+      ] = await Promise.all([
         settleStationRequests(window.NwsApi.getLatestObservation),
         settleStationRequests(window.NwsApi.getForecast),
         settleStationRequests(window.ClimateApi.getDailyTemperatureNormals),
         settleStationRequests(window.ClimateApi.getDailyTemperatureRecords),
+        settleStationRequests(window.ClimateApi.getMonthlyPrecipitation),
       ]);
 
       state.observations = successfulValues(observationResults);
       state.forecasts = successfulValues(forecastResults);
       state.climateNormals = successfulValues(climateNormalResults);
       state.temperatureRecords = successfulValues(recordResults);
+      state.monthlyPrecipitation = successfulValues(precipitationResults);
       renderObservations(observationResults);
       updateForecastControls(forecastResults);
       renderSelectedStation();
+      renderOfficialRecordTable();
+      renderPrecipitationTable();
 
       document.querySelector("#last-updated").textContent = `Updated ${formatter.format(new Date())}`;
       renderDataStatus(
@@ -48,7 +59,8 @@
         observationResults,
         forecastResults,
         climateNormalResults,
-        recordResults
+        recordResults,
+        precipitationResults
       );
       loadRecentDailyObservations(errorMessage);
     } catch (error) {
@@ -97,6 +109,7 @@
       state.recentDailyObservations.length > 0
     );
     renderSelectedStation();
+    renderOfficialRecordTable();
 
     if (recentObservationResults.some((result) => result.status === "rejected")) {
       renderDataStatus(errorMessage, recentObservationResults);
@@ -128,6 +141,7 @@
       climateNormals,
       temperatureRecords
     );
+    renderSelectedPrecipitation();
   }
 
   function renderObservations(results) {
@@ -248,5 +262,133 @@
     }
 
     errorMessage.hidden = true;
+  }
+
+  function renderOfficialRecordTable() {
+    config.stations.forEach((station) => {
+      const latestActual = getLatestCompleteActual(station.id);
+      const targetDate = latestActual ? latestActual.date : getTodayDateKey();
+      const normal = findDailyValue(state.climateNormals, station.id, targetDate);
+      const record = findDailyValue(state.temperatureRecords, station.id, targetDate);
+
+      setRecordCell(station.id, "high", formatTemperature(latestActual && latestActual.high));
+      setRecordCell(station.id, "low", formatTemperature(latestActual && latestActual.low));
+      setRecordCell(station.id, "normal", formatPair(normal && normal.high, normal && normal.low));
+      setRecordCell(
+        station.id,
+        "recordHigh",
+        formatRecord(record && record.recordHigh, record && record.recordHighYear)
+      );
+      setRecordCell(
+        station.id,
+        "recordLow",
+        formatRecord(record && record.recordLow, record && record.recordLowYear)
+      );
+    });
+  }
+
+  function renderSelectedPrecipitation() {
+    const precipitation =
+      state.monthlyPrecipitation.find((item) => item.stationId === state.selectedStationId) ||
+      state.monthlyPrecipitation.find((item) => item.stationId === DEFAULT_STATION_ID) ||
+      state.monthlyPrecipitation[0];
+
+    if (!precipitation) return;
+
+    window.WeatherCharts.renderPrecipitationChart(
+      document.querySelector("#precipitation-chart"),
+      precipitation
+    );
+  }
+
+  function renderPrecipitationTable() {
+    config.stations.forEach((station) => {
+      const precipitation = state.monthlyPrecipitation.find(
+        (item) => item.stationId === station.id
+      );
+
+      if (!precipitation) return;
+
+      const currentMonth =
+        precipitation.current.find((month) => month.month === getCurrentMonthKey()) ||
+        precipitation.current[precipitation.current.length - 1];
+      const currentMonthIndex = precipitation.current.findIndex(
+        (month) => month.month === currentMonth.month
+      );
+      const monthsToDate = precipitation.current.slice(0, currentMonthIndex + 1);
+      const yearTotal = sumPrecip(monthsToDate.map((month) => month.total));
+      const yearNormal = sumPrecip(monthsToDate.map((month) => month.normal));
+
+      setPrecipCell(station.id, "latestDay", formatInches(currentMonth && currentMonth.latestDaily));
+      setPrecipCell(station.id, "monthTotal", formatInches(currentMonth && currentMonth.total));
+      setPrecipCell(station.id, "monthNormal", formatInches(currentMonth && currentMonth.normal));
+      setPrecipCell(station.id, "yearTotal", formatInches(yearTotal));
+      setPrecipCell(station.id, "yearNormal", formatInches(yearNormal));
+    });
+  }
+
+  function getLatestCompleteActual(stationId) {
+    const series = state.recentDailyObservations.find((item) => item.stationId === stationId);
+    if (!series) return null;
+
+    return series.daily
+      .slice()
+      .reverse()
+      .find((day) => typeof day.high === "number" && typeof day.low === "number");
+  }
+
+  function findDailyValue(collection, stationId, date) {
+    const series = collection.find((item) => item.stationId === stationId);
+    if (!series) return null;
+    return series.daily.find((day) => day.date === date) || null;
+  }
+
+  function setRecordCell(stationId, key, value) {
+    const cell = document.querySelector(`[data-record-cell="${stationId}.${key}"]`);
+    if (cell) cell.textContent = value;
+  }
+
+  function setPrecipCell(stationId, key, value) {
+    const cell = document.querySelector(`[data-precip-cell="${stationId}.${key}"]`);
+    if (cell) cell.textContent = value;
+  }
+
+  function formatPair(high, low) {
+    if (typeof high !== "number" || typeof low !== "number") return "--";
+    return `${high}°/${low}°`;
+  }
+
+  function formatRecord(value, year) {
+    if (typeof value !== "number") return "--";
+    return year ? `${value}° ${year}` : `${value}°`;
+  }
+
+  function getTodayDateKey() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: config.timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+
+  function getCurrentMonthKey() {
+    return getTodayDateKey().slice(0, 7);
+  }
+
+  function sumPrecip(values) {
+    const numeric = values.filter((value) => typeof value === "number");
+    if (!numeric.length) return null;
+
+    return Math.round(numeric.reduce((sum, value) => sum + value, 0) * 100) / 100;
+  }
+
+  function formatInches(value) {
+    if (typeof value !== "number") return "--";
+    if (value === 0) return "Trace";
+    return `${value.toFixed(2)}"`;
   }
 })();
