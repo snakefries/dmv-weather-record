@@ -1,28 +1,8 @@
 (function () {
   "use strict";
 
-  const API_ROOT = "https://api.weather.gov";
-
-  const STATIONS = [
-    {
-      id: "DCA",
-      nwsStation: "KDCA",
-      label: "National",
-      point: { latitude: 38.8512, longitude: -77.0402 },
-    },
-    {
-      id: "IAD",
-      nwsStation: "KIAD",
-      label: "Dulles",
-      point: { latitude: 38.9531, longitude: -77.4565 },
-    },
-    {
-      id: "BWI",
-      nwsStation: "KBWI",
-      label: "BWI",
-      point: { latitude: 39.1754, longitude: -76.6683 },
-    },
-  ];
+  const API_ROOT = window.WeatherConfig.apiRoot;
+  const config = window.WeatherConfig;
 
   async function fetchJson(url) {
     const response = await fetch(url, {
@@ -74,6 +54,69 @@
     };
   }
 
+  async function getRecentDailyObservations(station) {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - (config.recentObservationDays + 2));
+
+    const params = new URLSearchParams({
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+    const features = await fetchObservationFeatures(
+      `${API_ROOT}/stations/${station.nwsStation}/observations?${params.toString()}`
+    );
+    const targetDates = getRecentCompleteDateKeys(config.recentObservationDays);
+    const targetDateSet = new Set(targetDates);
+    const daily = new Map();
+
+    targetDates.forEach((date) => {
+      daily.set(date, {
+        date,
+        label: shortDayLabel(`${date}T12:00:00`),
+        high: null,
+        low: null,
+        observations: 0,
+      });
+    });
+
+    features.forEach((feature) => {
+      const properties = feature.properties || {};
+      const temperature = celsiusToFahrenheit(
+        properties.temperature && properties.temperature.value
+      );
+      const date = localDateKey(properties.timestamp);
+
+      if (!targetDateSet.has(date) || typeof temperature !== "number") return;
+
+      const day = daily.get(date);
+      day.high = day.high === null ? temperature : Math.max(day.high, temperature);
+      day.low = day.low === null ? temperature : Math.min(day.low, temperature);
+      day.observations += 1;
+    });
+
+    return {
+      stationId: station.id,
+      stationLabel: station.label,
+      daily: targetDates.map((date) => daily.get(date)),
+    };
+  }
+
+  async function fetchObservationFeatures(initialUrl) {
+    const features = [];
+    let nextUrl = initialUrl;
+    let pageCount = 0;
+
+    while (nextUrl && pageCount < 10) {
+      const data = await fetchJson(nextUrl);
+      features.push(...(data.features || []));
+      nextUrl = data.pagination && data.pagination.next;
+      pageCount += 1;
+    }
+
+    return features;
+  }
+
   function buildDailyForecast(periods) {
     const days = new Map();
 
@@ -110,6 +153,31 @@
     }).format(new Date(isoDate));
   }
 
+  function localDateKey(isoDate) {
+    if (!isoDate) return "";
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: config.timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(isoDate));
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+
+  function getRecentCompleteDateKeys(count) {
+    const dates = [];
+    const cursor = new Date();
+
+    for (let offset = count; offset >= 1; offset -= 1) {
+      const date = new Date(cursor);
+      date.setDate(cursor.getDate() - offset);
+      dates.push(localDateKey(date.toISOString()));
+    }
+
+    return dates;
+  }
+
   function celsiusToFahrenheit(value) {
     if (typeof value !== "number") return null;
     return Math.round((value * 9) / 5 + 32);
@@ -127,8 +195,9 @@
   }
 
   window.NwsApi = {
-    STATIONS,
+    STATIONS: window.WeatherConfig.stations,
     getLatestObservation,
     getForecast,
+    getRecentDailyObservations,
   };
 })();

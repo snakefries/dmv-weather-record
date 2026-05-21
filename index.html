@@ -7,6 +7,7 @@
     <title>Capital Weather Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+    <script src="js/config.js" defer></script>
     <script src="js/nws-api.js" defer></script>
     <script src="js/charts.js" defer></script>
     <script src="js/app.js" defer></script>
@@ -25,6 +26,7 @@
         <article class="station-card" data-station-card="DCA">
           <div>
             <p class="station-code">DCA</p>
+            <p class="station-status" data-station-status>Loading</p>
             <h2>National</h2>
           </div>
           <dl class="conditions-list">
@@ -37,6 +39,7 @@
         <article class="station-card" data-station-card="IAD">
           <div>
             <p class="station-code">IAD</p>
+            <p class="station-status" data-station-status>Loading</p>
             <h2>Dulles</h2>
           </div>
           <dl class="conditions-list">
@@ -49,6 +52,7 @@
         <article class="station-card" data-station-card="BWI">
           <div>
             <p class="station-code">BWI</p>
+            <p class="station-status" data-station-status>Loading</p>
             <h2>BWI</h2>
           </div>
           <dl class="conditions-list">
@@ -76,17 +80,25 @@
             <p class="eyebrow">7-day outlook</p>
             <h2 id="temperature-title">Temperatures</h2>
           </div>
-          <div class="legend-note">
-            <span class="swatch swatch-low"></span> Low
-            <span class="swatch swatch-high"></span> High
+          <div class="station-toggle" aria-label="Temperature chart station">
+            <button type="button" class="is-active" data-chart-station="DCA">DCA</button>
+            <button type="button" data-chart-station="IAD">IAD</button>
+            <button type="button" data-chart-station="BWI">BWI</button>
           </div>
         </div>
+        <div class="chart-key" aria-label="Temperature chart legend">
+          <span><i class="key-line key-actual"></i> Actual</span>
+          <span><i class="key-line key-forecast"></i> Forecast</span>
+          <span><i class="key-band"></i> Historical average</span>
+          <span><i class="key-dot key-record-high"></i> Record high</span>
+          <span><i class="key-dot key-record-low"></i> Record low</span>
+        </div>
         <div class="chart-wrap">
-          <canvas id="temperature-chart" aria-label="Forecast high and low temperatures for DCA, IAD, and BWI" role="img"></canvas>
+          <canvas id="temperature-chart" aria-label="Forecast high and low temperature ranges" role="img"></canvas>
         </div>
         <p class="fine-print">
-          Forecast highs and lows use NWS point forecasts near each airport.
-          <!-- TODO: Add recent observed daily highs/lows from NOAA climate products when a reliable public endpoint is selected. -->
+          Actual ranges use recent NWS station observations; forecast ranges use NWS point forecasts near <span id="temperature-station-label">National</span>.
+          <!-- TODO: Validate observed daily highs/lows against official daily climate products when a reliable public endpoint is selected. -->
           <!-- TODO: Overlay 30-year normals and record highs/lows for DCA, IAD, and BWI. -->
         </p>
       </section>

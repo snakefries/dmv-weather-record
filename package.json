@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "check:dashboard": "node tools/check-dashboard.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
