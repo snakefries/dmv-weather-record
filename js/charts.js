@@ -232,8 +232,11 @@
       .filter(Array.isArray)
       .filter((range) => typeof range[0] === "number")
       .map((range) => range[0]);
-    if (!lows.length) return 20;
-    return Math.floor((Math.min(...lows) - 8) / 10) * 10;
+    if (!lows.length) return config.temperatureScaleMin;
+    const minimum = Math.min(...lows);
+    return minimum < config.temperatureScaleMin
+      ? Math.floor((minimum - 2) / 10) * 10
+      : config.temperatureScaleMin;
   }
 
   function getScaleMaximum(days) {
@@ -244,8 +247,11 @@
       .filter(Array.isArray)
       .filter((range) => typeof range[1] === "number")
       .map((range) => range[1]);
-    if (!highs.length) return 100;
-    return Math.ceil((Math.max(...highs) + 8) / 10) * 10;
+    if (!highs.length) return config.temperatureScaleMax;
+    const maximum = Math.max(...highs);
+    return maximum > config.temperatureScaleMax
+      ? Math.ceil((maximum + 2) / 10) * 10
+      : config.temperatureScaleMax;
   }
 
   window.WeatherCharts = {

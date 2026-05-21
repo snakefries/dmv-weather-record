@@ -5,7 +5,7 @@
 
   async function getDailyTemperatureNormals(station) {
     const body = {
-      sid: station.nwsStation,
+      sid: station.climateStation || station.nwsStation,
       sdate: relativeLocalDateKey(-config.recentObservationDays),
       edate: relativeLocalDateKey(config.forecastDays - 1),
       elems: [
@@ -53,7 +53,7 @@
 
   async function getRecordSeries(station, elementName, reduce) {
     const body = {
-      sid: station.nwsStation,
+      sid: station.climateStation || station.nwsStation,
       sdate: "por",
       edate: "por",
       elems: [
