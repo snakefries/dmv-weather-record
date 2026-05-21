@@ -13,6 +13,7 @@
     forecasts: [],
     observations: [],
     recentDailyObservations: [],
+    climateNormals: [],
     selectedStationId: DEFAULT_STATION_ID,
   };
 
@@ -25,19 +26,21 @@
       setLoadingState(true);
       bindTemperatureStationButtons();
 
-      const [observationResults, forecastResults] = await Promise.all([
+      const [observationResults, forecastResults, climateNormalResults] = await Promise.all([
         settleStationRequests(window.NwsApi.getLatestObservation),
         settleStationRequests(window.NwsApi.getForecast),
+        settleStationRequests(window.ClimateApi.getDailyTemperatureNormals),
       ]);
 
       state.observations = successfulValues(observationResults);
       state.forecasts = successfulValues(forecastResults);
+      state.climateNormals = successfulValues(climateNormalResults);
       renderObservations(observationResults);
       updateForecastControls(forecastResults);
       renderSelectedStation();
 
       document.querySelector("#last-updated").textContent = `Updated ${formatter.format(new Date())}`;
-      renderDataStatus(errorMessage, observationResults, forecastResults);
+      renderDataStatus(errorMessage, observationResults, forecastResults, climateNormalResults);
       loadRecentDailyObservations(errorMessage);
     } catch (error) {
       console.error(error);
@@ -80,6 +83,10 @@
       window.NwsApi.getRecentDailyObservations
     );
     state.recentDailyObservations = successfulValues(recentObservationResults);
+    document.body.classList.toggle(
+      "has-recent-observations",
+      state.recentDailyObservations.length > 0
+    );
     renderSelectedStation();
 
     if (recentObservationResults.some((result) => result.status === "rejected")) {
@@ -98,13 +105,16 @@
     const recentDaily =
       state.recentDailyObservations.find((item) => item.stationId === forecast.stationId) ||
       null;
+    const climateNormals =
+      state.climateNormals.find((item) => item.stationId === forecast.stationId) || null;
 
     renderSummaries(forecast);
     updateTemperatureStationControls(forecast);
     window.WeatherCharts.renderTemperatureChart(
       document.querySelector("#temperature-chart"),
       forecast,
-      recentDaily
+      recentDaily,
+      climateNormals
     );
   }
 

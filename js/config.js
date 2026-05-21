@@ -31,8 +31,10 @@
   window.WeatherConfig = {
     defaultStationId: "DCA",
     apiRoot: "https://api.weather.gov",
+    acisApiRoot: "https://data.rcc-acis.org",
     timeZone: "America/New_York",
     recentObservationDays: 5,
+    forecastDays: 7,
     stations: STATIONS,
     recordHighColor: "#e22b2f",
     recordLowColor: "#19a7d8",

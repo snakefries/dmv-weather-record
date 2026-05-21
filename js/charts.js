@@ -5,11 +5,11 @@
 
   let temperatureChart;
 
-  function renderTemperatureChart(canvas, forecast, recentDailyObservations) {
+  function renderTemperatureChart(canvas, forecast, recentDailyObservations, climateNormals) {
     const station = config.stations.find((item) => item.id === forecast.stationId);
     const forecastColor = station ? station.chartColor : config.stations[0].chartColor;
     const actualColor = station ? station.actualColor : config.stations[0].actualColor;
-    const chartDays = buildTemperatureDays(forecast, recentDailyObservations);
+    const chartDays = buildTemperatureDays(forecast, recentDailyObservations, climateNormals);
 
     if (temperatureChart) {
       temperatureChart.destroy();
@@ -22,13 +22,14 @@
         datasets: [
           {
             label: "Historical average",
-            data: chartDays.map(() => null),
+            data: chartDays.map((day) => day.normalRange),
             backgroundColor: config.normalRangeColor,
             borderSkipped: false,
             borderRadius: 0,
             barPercentage: 0.46,
             categoryPercentage: 0.8,
             grouped: false,
+            order: 3,
           },
           {
             label: `${forecast.stationId} actual range`,
@@ -40,6 +41,7 @@
             barPercentage: 0.22,
             categoryPercentage: 0.8,
             grouped: false,
+            order: 1,
           },
           {
             label: `${forecast.stationId} forecast range`,
@@ -51,6 +53,7 @@
             barPercentage: 0.22,
             categoryPercentage: 0.8,
             grouped: false,
+            order: 1,
           },
           {
             type: "line",
@@ -90,8 +93,12 @@
               label: (context) => {
                 const value = context.raw;
                 if (Array.isArray(value)) {
-                  const label =
-                    context.dataset.label.indexOf("actual") === -1 ? "forecast" : "actual";
+                  const datasetLabel = context.dataset.label.toLowerCase();
+                  const label = datasetLabel.includes("actual")
+                    ? "actual"
+                    : datasetLabel.includes("historical")
+                      ? "historical average"
+                      : "forecast";
                   return `${forecast.stationId} ${label}: ${value[0]}°-${value[1]}°F`;
                 }
                 if (typeof value === "number") {
@@ -144,9 +151,12 @@
     });
   }
 
-  function buildTemperatureDays(forecast, recentDailyObservations) {
+  function buildTemperatureDays(forecast, recentDailyObservations, climateNormals) {
     const observedDays = recentDailyObservations ? recentDailyObservations.daily : [];
     const forecastDays = forecast.daily.slice(0, 7);
+    const normalByDate = new Map(
+      (climateNormals ? climateNormals.daily : []).map((day) => [day.date, buildRange(day)])
+    );
 
     return [
       ...observedDays.map((day) => ({
@@ -154,12 +164,14 @@
         display: day.label,
         actualRange: buildRange(day),
         forecastRange: null,
+        normalRange: normalByDate.get(day.date) || null,
       })),
       ...forecastDays.map((day, index) => ({
         date: day.date,
         display: index === 0 ? ["TODAY", day.label] : day.label,
         actualRange: null,
         forecastRange: buildRange(day),
+        normalRange: normalByDate.get(day.date) || null,
       })),
     ];
   }
@@ -172,6 +184,7 @@
   function getScaleMinimum(days) {
     const lows = days
       .flatMap((day) => [day.actualRange, day.forecastRange])
+      .concat(days.map((day) => day.normalRange))
       .filter(Array.isArray)
       .map((range) => range[0]);
     if (!lows.length) return 20;
@@ -181,6 +194,7 @@
   function getScaleMaximum(days) {
     const highs = days
       .flatMap((day) => [day.actualRange, day.forecastRange])
+      .concat(days.map((day) => day.normalRange))
       .filter(Array.isArray)
       .map((range) => range[1]);
     if (!highs.length) return 100;

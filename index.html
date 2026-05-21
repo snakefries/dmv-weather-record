@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
     <script src="js/config.js" defer></script>
     <script src="js/nws-api.js" defer></script>
+    <script src="js/climate-api.js" defer></script>
     <script src="js/charts.js" defer></script>
     <script src="js/app.js" defer></script>
   </head>
@@ -97,9 +98,9 @@
           <canvas id="temperature-chart" aria-label="Forecast high and low temperature ranges" role="img"></canvas>
         </div>
         <p class="fine-print">
-          Actual ranges use recent NWS station observations; forecast ranges use NWS point forecasts near <span id="temperature-station-label">National</span>.
+          Actual ranges use recent NWS station observations; forecast ranges use NWS point forecasts near <span id="temperature-station-label">National</span>. Historical averages use ACIS daily temperature normals.
           <!-- TODO: Validate observed daily highs/lows against official daily climate products when a reliable public endpoint is selected. -->
-          <!-- TODO: Overlay 30-year normals and record highs/lows for DCA, IAD, and BWI. -->
+          <!-- TODO: Overlay record highs/lows for DCA, IAD, and BWI. -->
         </p>
       </section>
 
