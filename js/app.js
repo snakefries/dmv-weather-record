@@ -14,6 +14,7 @@
     observations: [],
     recentDailyObservations: [],
     climateNormals: [],
+    temperatureRecords: [],
     selectedStationId: DEFAULT_STATION_ID,
   };
 
@@ -26,21 +27,29 @@
       setLoadingState(true);
       bindTemperatureStationButtons();
 
-      const [observationResults, forecastResults, climateNormalResults] = await Promise.all([
+      const [observationResults, forecastResults, climateNormalResults, recordResults] = await Promise.all([
         settleStationRequests(window.NwsApi.getLatestObservation),
         settleStationRequests(window.NwsApi.getForecast),
         settleStationRequests(window.ClimateApi.getDailyTemperatureNormals),
+        settleStationRequests(window.ClimateApi.getDailyTemperatureRecords),
       ]);
 
       state.observations = successfulValues(observationResults);
       state.forecasts = successfulValues(forecastResults);
       state.climateNormals = successfulValues(climateNormalResults);
+      state.temperatureRecords = successfulValues(recordResults);
       renderObservations(observationResults);
       updateForecastControls(forecastResults);
       renderSelectedStation();
 
       document.querySelector("#last-updated").textContent = `Updated ${formatter.format(new Date())}`;
-      renderDataStatus(errorMessage, observationResults, forecastResults, climateNormalResults);
+      renderDataStatus(
+        errorMessage,
+        observationResults,
+        forecastResults,
+        climateNormalResults,
+        recordResults
+      );
       loadRecentDailyObservations(errorMessage);
     } catch (error) {
       console.error(error);
@@ -107,6 +116,8 @@
       null;
     const climateNormals =
       state.climateNormals.find((item) => item.stationId === forecast.stationId) || null;
+    const temperatureRecords =
+      state.temperatureRecords.find((item) => item.stationId === forecast.stationId) || null;
 
     renderSummaries(forecast);
     updateTemperatureStationControls(forecast);
@@ -114,7 +125,8 @@
       document.querySelector("#temperature-chart"),
       forecast,
       recentDaily,
-      climateNormals
+      climateNormals,
+      temperatureRecords
     );
   }
 

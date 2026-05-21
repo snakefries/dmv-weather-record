@@ -5,11 +5,22 @@
 
   let temperatureChart;
 
-  function renderTemperatureChart(canvas, forecast, recentDailyObservations, climateNormals) {
+  function renderTemperatureChart(
+    canvas,
+    forecast,
+    recentDailyObservations,
+    climateNormals,
+    temperatureRecords
+  ) {
     const station = config.stations.find((item) => item.id === forecast.stationId);
     const forecastColor = station ? station.chartColor : config.stations[0].chartColor;
     const actualColor = station ? station.actualColor : config.stations[0].actualColor;
-    const chartDays = buildTemperatureDays(forecast, recentDailyObservations, climateNormals);
+    const chartDays = buildTemperatureDays(
+      forecast,
+      recentDailyObservations,
+      climateNormals,
+      temperatureRecords
+    );
 
     if (temperatureChart) {
       temperatureChart.destroy();
@@ -58,18 +69,24 @@
           {
             type: "line",
             label: "Record high",
-            data: chartDays.map(() => null),
+            data: chartDays.map((day) => day.recordHigh),
             backgroundColor: config.recordHighColor,
-            pointRadius: 4,
+            borderColor: config.recordHighColor,
+            pointRadius: 4.5,
+            pointHoverRadius: 6,
             showLine: false,
+            order: 0,
           },
           {
             type: "line",
             label: "Record low",
-            data: chartDays.map(() => null),
+            data: chartDays.map((day) => day.recordLow),
             backgroundColor: config.recordLowColor,
-            pointRadius: 4,
+            borderColor: config.recordLowColor,
+            pointRadius: 4.5,
+            pointHoverRadius: 6,
             showLine: false,
+            order: 0,
           },
         ],
       },
@@ -102,6 +119,13 @@
                   return `${forecast.stationId} ${label}: ${value[0]}°-${value[1]}°F`;
                 }
                 if (typeof value === "number") {
+                  const day = chartDays[context.dataIndex];
+                  if (context.dataset.label === "Record high") {
+                    return `Record high: ${value}°F (${day.recordHighYear || "year unavailable"})`;
+                  }
+                  if (context.dataset.label === "Record low") {
+                    return `Record low: ${value}°F (${day.recordLowYear || "year unavailable"})`;
+                  }
                   return `${context.dataset.label}: ${value}°F`;
                 }
                 return "";
@@ -151,11 +175,19 @@
     });
   }
 
-  function buildTemperatureDays(forecast, recentDailyObservations, climateNormals) {
+  function buildTemperatureDays(
+    forecast,
+    recentDailyObservations,
+    climateNormals,
+    temperatureRecords
+  ) {
     const observedDays = recentDailyObservations ? recentDailyObservations.daily : [];
     const forecastDays = forecast.daily.slice(0, 7);
     const normalByDate = new Map(
       (climateNormals ? climateNormals.daily : []).map((day) => [day.date, buildRange(day)])
+    );
+    const recordByDate = new Map(
+      (temperatureRecords ? temperatureRecords.daily : []).map((day) => [day.date, day])
     );
 
     return [
@@ -165,6 +197,7 @@
         actualRange: buildRange(day),
         forecastRange: null,
         normalRange: normalByDate.get(day.date) || null,
+        ...getRecordValues(recordByDate.get(day.date)),
       })),
       ...forecastDays.map((day, index) => ({
         date: day.date,
@@ -172,8 +205,18 @@
         actualRange: null,
         forecastRange: buildRange(day),
         normalRange: normalByDate.get(day.date) || null,
+        ...getRecordValues(recordByDate.get(day.date)),
       })),
     ];
+  }
+
+  function getRecordValues(record) {
+    return {
+      recordHigh: record ? record.recordHigh : null,
+      recordHighYear: record ? record.recordHighYear : null,
+      recordLow: record ? record.recordLow : null,
+      recordLowYear: record ? record.recordLowYear : null,
+    };
   }
 
   function buildRange(day) {
@@ -185,7 +228,9 @@
     const lows = days
       .flatMap((day) => [day.actualRange, day.forecastRange])
       .concat(days.map((day) => day.normalRange))
+      .concat(days.map((day) => [day.recordLow, day.recordLow]))
       .filter(Array.isArray)
+      .filter((range) => typeof range[0] === "number")
       .map((range) => range[0]);
     if (!lows.length) return 20;
     return Math.floor((Math.min(...lows) - 8) / 10) * 10;
@@ -195,7 +240,9 @@
     const highs = days
       .flatMap((day) => [day.actualRange, day.forecastRange])
       .concat(days.map((day) => day.normalRange))
+      .concat(days.map((day) => [day.recordHigh, day.recordHigh]))
       .filter(Array.isArray)
+      .filter((range) => typeof range[1] === "number")
       .map((range) => range[1]);
     if (!highs.length) return 100;
     return Math.ceil((Math.max(...highs) + 8) / 10) * 10;

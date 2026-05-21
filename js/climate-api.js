@@ -26,6 +26,52 @@
     };
   }
 
+  async function getDailyTemperatureRecords(station) {
+    const [recordHighs, recordLows] = await Promise.all([
+      getRecordSeries(station, "maxt", "max"),
+      getRecordSeries(station, "mint", "min"),
+    ]);
+
+    return {
+      stationId: station.id,
+      stationLabel: station.label,
+      daily: getChartDateKeys().map((date) => {
+        const dayIndex = calendarDayIndex(date);
+        const recordHigh = parseRecordEntry(recordHighs[dayIndex]);
+        const recordLow = parseRecordEntry(recordLows[dayIndex]);
+
+        return {
+          date,
+          recordHigh: recordHigh.value,
+          recordHighYear: recordHigh.year,
+          recordLow: recordLow.value,
+          recordLowYear: recordLow.year,
+        };
+      }),
+    };
+  }
+
+  async function getRecordSeries(station, elementName, reduce) {
+    const body = {
+      sid: station.nwsStation,
+      sdate: "por",
+      edate: "por",
+      elems: [
+        {
+          name: elementName,
+          interval: "dly",
+          duration: "dly",
+          smry: { reduce, add: "date" },
+          smry_only: 1,
+          groupby: "year",
+        },
+      ],
+    };
+    const data = await postJson(`${config.acisApiRoot}/StnData`, body);
+
+    return (data.smry && data.smry[0]) || [];
+  }
+
   async function postJson(url, body) {
     const response = await fetch(url, {
       method: "POST",
@@ -69,7 +115,36 @@
     return `${values.year}-${values.month}-${values.day}`;
   }
 
+  function getChartDateKeys() {
+    const dates = [];
+
+    for (let offset = -config.recentObservationDays; offset < config.forecastDays; offset += 1) {
+      dates.push(relativeLocalDateKey(offset));
+    }
+
+    return dates;
+  }
+
+  function calendarDayIndex(dateKey) {
+    const month = Number(dateKey.slice(5, 7));
+    const day = Number(dateKey.slice(8, 10));
+    const date = new Date(Date.UTC(2024, month - 1, day));
+    const yearStart = new Date(Date.UTC(2024, 0, 1));
+
+    return Math.round((date - yearStart) / 86400000);
+  }
+
+  function parseRecordEntry(entry) {
+    if (!entry) return { value: null, year: null };
+
+    const value = parseClimateNumber(entry[0]);
+    const year = typeof entry[1] === "string" ? entry[1].slice(0, 4) : null;
+
+    return { value, year };
+  }
+
   window.ClimateApi = {
     getDailyTemperatureNormals,
+    getDailyTemperatureRecords,
   };
 })();
