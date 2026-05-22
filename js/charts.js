@@ -258,18 +258,14 @@
   function renderPrecipitationChart(canvas, precipitation) {
     const station = config.stations.find((item) => item.id === precipitation.stationId);
     const displayMonths = getRollingPrecipitationMonths();
-    const labels = displayMonths.map(({ month }) => shortMonthLabel(month));
-    const latestTotals = displayMonths.map(({ month }) =>
-      getPrecipitationMonth(
-        month < displayMonths[0].month ? precipitation.current : precipitation.previous,
-        month
-      )?.total
+    const labels = displayMonths.map(({ month, year }) => [shortMonthLabel(month), String(year)]);
+    const latestTotals = displayMonths.map(({ month, year }) =>
+      getPrecipitationMonth(year === precipitation.currentYear ? precipitation.current : precipitation.previous, month)
+        ?.total
     );
-    const previousTotals = displayMonths.map(({ month }) =>
+    const previousTotals = displayMonths.map(({ month, year }) =>
       getPrecipitationMonth(
-        month < displayMonths[0].month
-          ? precipitation.previous
-          : precipitation.previousComparison || [],
+        year === precipitation.currentYear ? precipitation.previous : precipitation.previousComparison || [],
         month
       )?.total
     );
@@ -370,9 +366,20 @@
       }).format(new Date())
     );
 
-    return Array.from({ length: 12 }, (_, index) => ({
-      month: ((currentMonth + index - 1) % 12) + 1,
-    }));
+    const currentYear = Number(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: config.timeZone,
+        year: "numeric",
+      }).format(new Date())
+    );
+
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = ((currentMonth + index - 1) % 12) + 1;
+      return {
+        month,
+        year: month < currentMonth ? currentYear : currentYear - 1,
+      };
+    });
   }
 
   function getPrecipitationMonth(months, month) {
