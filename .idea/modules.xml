@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/nws-dashboard.iml" filepath="$PROJECT_DIR$/nws-dashboard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dmv-weather-record.iml" filepath="$PROJECT_DIR$/dmv-weather-record.iml" />
     </modules>
   </component>
 </project>

@@ -6,9 +6,9 @@ const PORT = Number(process.env.PORT || 8000);
 const BASE_URL = process.env.DASHBOARD_URL || `http://127.0.0.1:${PORT}/`;
 const CHECK_TIMEOUT = Number(process.env.CHECK_TIMEOUT || 45000);
 const IPHONE_SCREENSHOT =
-  process.env.IPHONE_SCREENSHOT || "/private/tmp/nws-dashboard-check-iphone.png";
+  process.env.IPHONE_SCREENSHOT || "/private/tmp/dmv-weather-record-check-iphone.png";
 const DESKTOP_SCREENSHOT =
-  process.env.DESKTOP_SCREENSHOT || "/private/tmp/nws-dashboard-check-desktop.png";
+  process.env.DESKTOP_SCREENSHOT || "/private/tmp/dmv-weather-record-check-desktop.png";
 
 let server;
 
