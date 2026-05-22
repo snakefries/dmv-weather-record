@@ -53,9 +53,11 @@
 
   async function getMonthlyPrecipitation(station) {
     const currentYear = Number(relativeLocalDateKey(0).slice(0, 4));
-    const [current, previous] = await Promise.all([
+    const [current, previous, previousComparison, summary] = await Promise.all([
       getMonthlyPrecipitationSeries(station, currentYear, true),
       getMonthlyPrecipitationSeries(station, currentYear - 1, false),
+      getMonthlyPrecipitationSeries(station, currentYear - 2, false),
+      getPrecipitationSummary(station, currentYear),
     ]);
 
     return {
@@ -63,8 +65,44 @@
       stationLabel: station.label,
       currentYear,
       previousYear: currentYear - 1,
+      previousComparisonYear: currentYear - 2,
       current,
       previous,
+      previousComparison,
+      summary,
+    };
+  }
+
+  async function getPrecipitationSummary(station, year) {
+    const startDate = `${year}-01-01`;
+    const endDate = relativeLocalDateKey(-1);
+    if (endDate < startDate) {
+      return {
+        latestDaily: null,
+        monthTotal: 0,
+        monthNormal: 0,
+        yearTotal: 0,
+        yearNormal: 0,
+      };
+    }
+
+    const body = {
+      sid: station.climateStation || station.nwsStation,
+      sdate: startDate,
+      edate: endDate,
+      elems: [{ name: "pcpn" }, { name: "pcpn", normal: 1 }],
+    };
+    const data = await postJson(`${config.acisApiRoot}/StnData`, body);
+    const rows = data.data || [];
+    const monthKey = endDate.slice(0, 7);
+    const monthRows = rows.filter((row) => row[0].startsWith(monthKey));
+
+    return {
+      latestDaily: latestDailyPrecip(rows.map((row) => row[1])),
+      monthTotal: sumDailyPrecip(monthRows.map((row) => row[1])),
+      monthNormal: sumDailyPrecip(monthRows.map((row) => row[2])),
+      yearTotal: sumDailyPrecip(rows.map((row) => row[1])),
+      yearNormal: sumDailyPrecip(rows.map((row) => row[2])),
     };
   }
 

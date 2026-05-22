@@ -257,10 +257,25 @@
 
   function renderPrecipitationChart(canvas, precipitation) {
     const station = config.stations.find((item) => item.id === precipitation.stationId);
-    const labels = precipitation.current.map((month) => month.label);
-    const previousTotals = precipitation.previous.map((month) => month.total);
-    const latestTotals = precipitation.current.map((month) => month.total);
-    const normalTotals = precipitation.current.map((month) => month.normal);
+    const displayMonths = getRollingPrecipitationMonths();
+    const labels = displayMonths.map(({ month }) => shortMonthLabel(month));
+    const latestTotals = displayMonths.map(({ month }) =>
+      getPrecipitationMonth(
+        month < displayMonths[0].month ? precipitation.current : precipitation.previous,
+        month
+      )?.total
+    );
+    const previousTotals = displayMonths.map(({ month }) =>
+      getPrecipitationMonth(
+        month < displayMonths[0].month
+          ? precipitation.previous
+          : precipitation.previousComparison || [],
+        month
+      )?.total
+    );
+    const normalTotals = displayMonths.map(({ month }) =>
+      getPrecipitationMonth(precipitation.current, month)?.normal
+    );
 
     if (precipitationChart) {
       precipitationChart.destroy();
@@ -272,7 +287,7 @@
         labels,
         datasets: [
           {
-            label: `${precipitation.previousYear}`,
+            label: "Previous year",
             data: previousTotals,
             backgroundColor: "#a8d9e8",
             borderSkipped: false,
@@ -288,7 +303,7 @@
             barPercentage: 0.9,
           },
           {
-            label: `${precipitation.currentYear}`,
+            label: "Latest",
             data: latestTotals,
             backgroundColor: station ? station.chartColor : config.stations[0].chartColor,
             borderSkipped: false,
@@ -345,6 +360,29 @@
         },
       },
     });
+  }
+
+  function getRollingPrecipitationMonths() {
+    const currentMonth = Number(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: config.timeZone,
+        month: "numeric",
+      }).format(new Date())
+    );
+
+    return Array.from({ length: 12 }, (_, index) => ({
+      month: ((currentMonth + index - 1) % 12) + 1,
+    }));
+  }
+
+  function getPrecipitationMonth(months, month) {
+    const monthSuffix = `-${String(month).padStart(2, "0")}`;
+    return months.find((item) => item.month.endsWith(monthSuffix));
+  }
+
+  function shortMonthLabel(month) {
+    const date = new Date(2024, month - 1, 1, 12);
+    return new Intl.DateTimeFormat("en-US", { month: "short" }).format(date);
   }
 
   function getPrecipScaleMax(values) {

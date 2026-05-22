@@ -13,6 +13,7 @@
     forecasts: [],
     observations: [],
     recentDailyObservations: [],
+    rollingPrecipitation: [],
     climateNormals: [],
     temperatureRecords: [],
     monthlyPrecipitation: [],
@@ -34,12 +35,14 @@
         climateNormalResults,
         recordResults,
         precipitationResults,
+        rollingPrecipitationResults,
       ] = await Promise.all([
         settleStationRequests(window.NwsApi.getLatestObservation),
         settleStationRequests(window.NwsApi.getForecast),
         settleStationRequests(window.ClimateApi.getDailyTemperatureNormals),
         settleStationRequests(window.ClimateApi.getDailyTemperatureRecords),
         settleStationRequests(window.ClimateApi.getMonthlyPrecipitation),
+        settleStationRequests(window.NwsApi.getRollingPrecipitation),
       ]);
 
       state.observations = successfulValues(observationResults);
@@ -47,6 +50,7 @@
       state.climateNormals = successfulValues(climateNormalResults);
       state.temperatureRecords = successfulValues(recordResults);
       state.monthlyPrecipitation = successfulValues(precipitationResults);
+      state.rollingPrecipitation = successfulValues(rollingPrecipitationResults);
       renderObservations(observationResults);
       updateForecastControls(forecastResults);
       renderSelectedStation();
@@ -60,7 +64,8 @@
         forecastResults,
         climateNormalResults,
         recordResults,
-        precipitationResults
+        precipitationResults,
+        rollingPrecipitationResults
       );
       loadRecentDailyObservations(errorMessage);
     } catch (error) {
@@ -316,14 +321,26 @@
         (month) => month.month === currentMonth.month
       );
       const monthsToDate = precipitation.current.slice(0, currentMonthIndex + 1);
-      const yearTotal = sumPrecip(monthsToDate.map((month) => month.total));
-      const yearNormal = sumPrecip(monthsToDate.map((month) => month.normal));
+      const summary = precipitation.summary || {
+        latestDaily: currentMonth && currentMonth.latestDaily,
+        monthTotal: currentMonth && currentMonth.total,
+        monthNormal: currentMonth && currentMonth.normal,
+        yearTotal: sumPrecip(monthsToDate.map((month) => month.total)),
+        yearNormal: sumPrecip(monthsToDate.map((month) => month.normal)),
+      };
+      const rollingPrecipitation = state.rollingPrecipitation.find(
+        (item) => item.stationId === station.id
+      );
 
-      setPrecipCell(station.id, "latestDay", formatInches(currentMonth && currentMonth.latestDaily));
-      setPrecipCell(station.id, "monthTotal", formatInches(currentMonth && currentMonth.total));
-      setPrecipCell(station.id, "monthNormal", formatInches(currentMonth && currentMonth.normal));
-      setPrecipCell(station.id, "yearTotal", formatInches(yearTotal));
-      setPrecipCell(station.id, "yearNormal", formatInches(yearNormal));
+      setPrecipCell(
+        station.id,
+        "latestDay",
+        formatInches(rollingPrecipitation ? rollingPrecipitation.total : summary.latestDaily)
+      );
+      setPrecipCell(station.id, "monthTotal", formatInches(summary.monthTotal));
+      setPrecipCell(station.id, "monthNormal", formatInches(summary.monthNormal));
+      setPrecipCell(station.id, "yearTotal", formatInches(summary.yearTotal));
+      setPrecipCell(station.id, "yearNormal", formatInches(summary.yearNormal));
     });
   }
 

@@ -28,7 +28,7 @@
       timestamp: properties.timestamp,
       textDescription: properties.textDescription || "Unavailable",
       temperatureF: celsiusToFahrenheit(properties.temperature && properties.temperature.value),
-      windSpeedMph: metersPerSecondToMph(properties.windSpeed && properties.windSpeed.value),
+      windSpeedMph: windSpeedToMph(properties.windSpeed),
       windDirection: degreesToCompass(properties.windDirection && properties.windDirection.value),
     };
   }
@@ -102,6 +102,44 @@
     };
   }
 
+  async function getRollingPrecipitation(station) {
+    const end = new Date();
+    const start = new Date(end.getTime() - 30 * 60 * 60 * 1000);
+    const params = new URLSearchParams({
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+    const features = await fetchObservationFeatures(
+      `${API_ROOT}/stations/${station.nwsStation}/observations?${params.toString()}`
+    );
+    const hourly = selectHourlyPrecipitationObservations(features);
+
+    if (!hourly.length) {
+      return {
+        stationId: station.id,
+        stationLabel: station.label,
+        total: null,
+        asOf: null,
+        observations: 0,
+      };
+    }
+
+    const latestTime = Math.max(...hourly.map((observation) => observation.date.getTime()));
+    const cutoffTime = latestTime - 24 * 60 * 60 * 1000;
+    const selected = hourly.filter((observation) => {
+      const time = observation.date.getTime();
+      return time > cutoffTime && time <= latestTime;
+    });
+
+    return {
+      stationId: station.id,
+      stationLabel: station.label,
+      total: roundPrecip(selected.reduce((sum, observation) => sum + observation.inches, 0)),
+      asOf: new Date(latestTime).toISOString(),
+      observations: selected.length,
+    };
+  }
+
   async function fetchObservationFeatures(initialUrl) {
     const features = [];
     let nextUrl = initialUrl;
@@ -115,6 +153,65 @@
     }
 
     return features;
+  }
+
+  function selectHourlyPrecipitationObservations(features) {
+    const observations = features
+      .map((feature) => feature.properties || {})
+      .map((properties) => {
+        const precipitation = properties.precipitationLastHour || {};
+        return {
+          date: new Date(properties.timestamp),
+          inches: millimetersToInches(precipitation.value),
+        };
+      })
+      .filter(
+        (observation) =>
+          !Number.isNaN(observation.date.getTime()) && typeof observation.inches === "number"
+      );
+
+    const routineMinute = getRoutineMinute(observations);
+    const hourly = new Map();
+
+    observations.forEach((observation) => {
+      const hourKey = observation.date.toISOString().slice(0, 13);
+      const existing = hourly.get(hourKey);
+      if (!existing || isCloserToRoutineMinute(observation, existing, routineMinute)) {
+        hourly.set(hourKey, observation);
+      }
+    });
+
+    return Array.from(hourly.values());
+  }
+
+  function getRoutineMinute(observations) {
+    const counts = new Map();
+    observations.forEach((observation) => {
+      const minute = observation.date.getUTCMinutes();
+      counts.set(minute, (counts.get(minute) || 0) + 1);
+    });
+
+    const [minute] =
+      Array.from(counts.entries()).sort((left, right) => right[1] - left[1] || left[0] - right[0])[
+        0
+      ] || [];
+
+    return typeof minute === "number" ? minute : 0;
+  }
+
+  function isCloserToRoutineMinute(candidate, current, routineMinute) {
+    const candidateDistance = minuteDistance(candidate.date.getUTCMinutes(), routineMinute);
+    const currentDistance = minuteDistance(current.date.getUTCMinutes(), routineMinute);
+
+    return (
+      candidateDistance < currentDistance ||
+      (candidateDistance === currentDistance && candidate.date > current.date)
+    );
+  }
+
+  function minuteDistance(left, right) {
+    const distance = Math.abs(left - right);
+    return Math.min(distance, 60 - distance);
   }
 
   function buildDailyForecast(periods) {
@@ -183,9 +280,27 @@
     return Math.round((value * 9) / 5 + 32);
   }
 
-  function metersPerSecondToMph(value) {
+  function windSpeedToMph(speed) {
+    if (!speed || typeof speed.value !== "number") return null;
+
+    if (speed.unitCode === "wmoUnit:km_h-1") {
+      return Math.round(speed.value * 0.621371);
+    }
+
+    if (speed.unitCode === "wmoUnit:m_s-1") {
+      return Math.round(speed.value * 2.23694);
+    }
+
+    return Math.round(speed.value);
+  }
+
+  function millimetersToInches(value) {
     if (typeof value !== "number") return null;
-    return Math.round(value * 2.23694);
+    return value * 0.03937007874015748;
+  }
+
+  function roundPrecip(value) {
+    return Math.round(value * 100) / 100;
   }
 
   function degreesToCompass(value) {
@@ -199,5 +314,6 @@
     getLatestObservation,
     getForecast,
     getRecentDailyObservations,
+    getRollingPrecipitation,
   };
 })();
