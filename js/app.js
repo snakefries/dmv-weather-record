@@ -271,13 +271,17 @@
 
   function renderOfficialRecordTable() {
     config.stations.forEach((station) => {
-      const latestActual = getLatestCompleteActual(station.id);
+      const latestActual = getLatestCompleteClimateActual(station.id);
       const targetDate = latestActual ? latestActual.date : getTodayDateKey();
       const normal = findDailyValue(state.climateNormals, station.id, targetDate);
       const record = findDailyValue(state.temperatureRecords, station.id, targetDate);
 
-      setRecordCell(station.id, "high", formatTemperature(latestActual && latestActual.high));
-      setRecordCell(station.id, "low", formatTemperature(latestActual && latestActual.low));
+      setRecordCell(
+        station.id,
+        "high",
+        formatTemperature(latestActual && latestActual.actualHigh)
+      );
+      setRecordCell(station.id, "low", formatTemperature(latestActual && latestActual.actualLow));
       setRecordCell(station.id, "normal", formatPair(normal && normal.high, normal && normal.low));
       setRecordCell(
         station.id,
@@ -290,6 +294,22 @@
         formatRecord(record && record.recordLow, record && record.recordLowYear)
       );
     });
+  }
+
+  function getLatestCompleteClimateActual(stationId) {
+    const series = state.climateNormals.find((item) => item.stationId === stationId);
+    if (!series) return null;
+
+    const today = getTodayDateKey();
+    return series.daily
+      .slice()
+      .reverse()
+      .find(
+        (day) =>
+          day.date < today &&
+          typeof day.actualHigh === "number" &&
+          typeof day.actualLow === "number"
+      );
   }
 
   function renderSelectedPrecipitation() {
@@ -342,16 +362,6 @@
       setPrecipCell(station.id, "yearTotal", formatInches(summary.yearTotal));
       setPrecipCell(station.id, "yearNormal", formatInches(summary.yearNormal));
     });
-  }
-
-  function getLatestCompleteActual(stationId) {
-    const series = state.recentDailyObservations.find((item) => item.stationId === stationId);
-    if (!series) return null;
-
-    return series.daily
-      .slice()
-      .reverse()
-      .find((day) => typeof day.high === "number" && typeof day.low === "number");
   }
 
   function findDailyValue(collection, stationId, date) {

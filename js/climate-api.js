@@ -9,6 +9,8 @@
       sdate: relativeLocalDateKey(-config.recentObservationDays),
       edate: relativeLocalDateKey(config.forecastDays - 1),
       elems: [
+        { name: "maxt" },
+        { name: "mint" },
         { name: "maxt", normal: 1 },
         { name: "mint", normal: 1 },
       ],
@@ -20,8 +22,10 @@
       stationLabel: station.label,
       daily: (data.data || []).map((row) => ({
         date: row[0],
-        high: parseClimateNumber(row[1]),
-        low: parseClimateNumber(row[2]),
+        actualHigh: parseClimateNumber(row[1]),
+        actualLow: parseClimateNumber(row[2]),
+        high: parseClimateNumber(row[3]),
+        low: parseClimateNumber(row[4]),
       })),
     };
   }

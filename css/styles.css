@@ -350,6 +350,16 @@ dd {
   line-height: 1.35;
 }
 
+.site-footer {
+  color: var(--muted);
+  border-top: 1.5px solid var(--soft-rule);
+  padding-top: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .official-record {
   margin-top: 16px;
 }

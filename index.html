@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#f7f2e8">
-    <title>Capital Weather Dashboard</title>
+    <title>DMV Weather Record</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
     <script src="js/config.js" defer></script>
@@ -17,7 +17,7 @@
     <header class="site-header">
       <div>
         <p class="eyebrow">Washington / Baltimore</p>
-        <h1>Weather Record</h1>
+        <h1>DMV Weather Record</h1>
       </div>
       <p class="updated" id="last-updated">Loading live data...</p>
     </header>
@@ -206,6 +206,11 @@
       </section>
 
       <p class="error-message" id="error-message" hidden></p>
+      <footer class="site-footer">
+        Data: NOAA/National Weather Service and ACIS/NOAA Regional Climate Centers.
+        Near-real-time climate data may be preliminary. This site is unofficial and not endorsed
+        by any data provider or news organization.
+      </footer>
     </main>
   </body>
 </html>
