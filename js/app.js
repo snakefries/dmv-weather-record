@@ -32,30 +32,45 @@
         console.error(error);
       });
 
+      const observationRequest = settleStationRequests(window.NwsApi.getLatestObservation);
+      const forecastRequest = settleStationRequests(window.NwsApi.getForecast);
+      const climateNormalRequest = settleStationRequests(
+        window.ClimateApi.getDailyTemperatureNormals
+      );
+      const recordRequest = settleStationRequests(window.ClimateApi.getDailyTemperatureRecords);
+      const precipitationRequest = settleStationRequests(
+        window.ClimateApi.getMonthlyPrecipitation
+      );
+      const rollingPrecipitationRequest = settleStationRequests(
+        window.NwsApi.getRollingPrecipitation
+      );
+
+      const observationResults = await observationRequest;
+      state.observations = successfulValues(observationResults);
+      renderObservations(observationResults);
+
+      const forecastResults = await forecastRequest;
+      state.forecasts = successfulValues(forecastResults);
+      updateForecastControls(forecastResults);
+      renderSelectedStation();
+
       const [
-        observationResults,
-        forecastResults,
         climateNormalResults,
         recordResults,
         precipitationResults,
         rollingPrecipitationResults,
       ] = await Promise.all([
-        settleStationRequests(window.NwsApi.getLatestObservation),
-        settleStationRequests(window.NwsApi.getForecast),
-        settleStationRequests(window.ClimateApi.getDailyTemperatureNormals),
-        settleStationRequests(window.ClimateApi.getDailyTemperatureRecords),
-        settleStationRequests(window.ClimateApi.getMonthlyPrecipitation),
-        settleStationRequests(window.NwsApi.getRollingPrecipitation),
+        climateNormalRequest,
+        recordRequest,
+        precipitationRequest,
+        rollingPrecipitationRequest,
       ]);
 
-      state.observations = successfulValues(observationResults);
-      state.forecasts = successfulValues(forecastResults);
       state.climateNormals = successfulValues(climateNormalResults);
       state.temperatureRecords = successfulValues(recordResults);
       state.monthlyPrecipitation = successfulValues(precipitationResults);
       state.rollingPrecipitation = successfulValues(rollingPrecipitationResults);
-      renderObservations(observationResults);
-      updateForecastControls(forecastResults);
+
       renderSelectedStation();
       renderOfficialRecordTable();
       renderPrecipitationTable();
