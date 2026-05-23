@@ -28,6 +28,9 @@
     try {
       setLoadingState(true);
       bindTemperatureStationButtons();
+      loadRecentDailyObservations(errorMessage).catch((error) => {
+        console.error(error);
+      });
 
       const [
         observationResults,
@@ -67,7 +70,6 @@
         precipitationResults,
         rollingPrecipitationResults
       );
-      loadRecentDailyObservations(errorMessage);
     } catch (error) {
       console.error(error);
       errorMessage.textContent =
@@ -116,7 +118,10 @@
     renderSelectedStation();
     renderOfficialRecordTable();
 
-    if (recentObservationResults.some((result) => result.status === "rejected")) {
+    if (
+      state.forecasts.length &&
+      recentObservationResults.some((result) => result.status === "rejected")
+    ) {
       renderDataStatus(errorMessage, recentObservationResults);
     }
   }
