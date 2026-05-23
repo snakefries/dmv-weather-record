@@ -5,6 +5,39 @@
 
   let temperatureChart;
   let precipitationChart;
+  const activeTooltipCharts = new Set();
+  let tooltipDismissalRegistered = false;
+
+  function registerTooltipDismissal(chart) {
+    activeTooltipCharts.add(chart);
+
+    if (tooltipDismissalRegistered) return;
+    tooltipDismissalRegistered = true;
+
+    document.addEventListener("pointerdown", (event) => {
+      const touchedChart = Array.from(activeTooltipCharts).some(
+        (item) => item.canvas && item.canvas.contains(event.target)
+      );
+
+      if (!touchedChart) {
+        dismissChartTooltips();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        dismissChartTooltips();
+      }
+    });
+  }
+
+  function dismissChartTooltips() {
+    activeTooltipCharts.forEach((chart) => {
+      chart.setActiveElements([]);
+      chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+      chart.update();
+    });
+  }
 
   function renderTemperatureChart(
     canvas,
@@ -24,6 +57,7 @@
     );
 
     if (temperatureChart) {
+      activeTooltipCharts.delete(temperatureChart);
       temperatureChart.destroy();
     }
 
@@ -174,6 +208,8 @@
         },
       },
     });
+
+    registerTooltipDismissal(temperatureChart);
   }
 
   function buildTemperatureDays(
@@ -274,6 +310,7 @@
     );
 
     if (precipitationChart) {
+      activeTooltipCharts.delete(precipitationChart);
       precipitationChart.destroy();
     }
 
@@ -356,6 +393,8 @@
         },
       },
     });
+
+    registerTooltipDismissal(precipitationChart);
   }
 
   function getRollingPrecipitationMonths() {
